@@ -1,5 +1,7 @@
 # Non-Functional Requirements
 
+Quality characteristics follow ISO/IEC 25010:2023.
+
 ## Context
 
 All inference runs locally on CPU: Intel Core i7-1165G7 (4 cores), ~20 GB RAM, no discrete GPU.
@@ -28,18 +30,34 @@ Output length dominates latency, so the brief schema must stay compact.
 This is an estimate; prompt throughput on CPU usually drops with longer prompts.
 It will be replaced by a measured p50/p95 in week 2.
 
-## Requirements
+## Constraints
 
-| ID | Category | Requirement | Target | Verified by |
+| ID | Constraint | Target | Verified by |
+|---|---|---|---|
+| CON-01 | Inference cost | $0, local models only | Architecture |
+| CON-02 | Hardware | Runs on the machine described above, CPU only | Baseline |
+| CON-03 | Data | All data is synthetic; no data from any real company | Seeder |
+
+## Quality requirements
+
+| ID | ISO 25010 characteristic | Requirement | Target | Verified by |
 |---|---|---|---|---|
-| NFR-01 | Correctness | Every citation points to a chunk retrieved for that request | 100% (any invalid citation fails the eval) | Evals command |
-| NFR-02 | Groundedness | No claim without a source | 0 forbidden claims in the golden set | Evals command |
-| NFR-03 | Honesty | With insufficient context, the response says so explicitly | 100% of "no context" golden cases | Evals command |
-| NFR-04 | Cost | Inference cost | $0, local models only | Architecture |
-| NFR-05 | Latency | Brief generation p95 | Set after week 2 measurement (projection: ~45 s warm) | Evals command (p50/p95) |
-| NFR-06 | Responsiveness | Brief generation never blocks the HTTP request | API returns a job id in < 300 ms; client polls | Manual check |
-| NFR-07 | Efficiency | Unchanged content is never re-embedded | 0 embedding calls when re-ingesting an unchanged activity | Model call log |
-| NFR-08 | Efficiency | Identical retrieved chunk set reuses the cached brief | 0 model calls on cache hit | Model call log |
-| NFR-09 | Observability | Every model call is logged with model, latency, chunk ids and validation result | 100% of calls | Model call log |
-| NFR-10 | Privacy | No data leaves the machine; all data is synthetic | No external API calls | Architecture |
-| NFR-11 | Reproducibility | A fresh clone runs with `docker compose up` plus the documented model pulls | Documented in README | Manual check |
+| NFR-01 | Functional suitability | Every citation points to a chunk retrieved for that request | 100% (any invalid citation fails the eval) | Evals command |
+| NFR-02 | Functional suitability | No claim without a source | 0 forbidden claims in the golden set | Evals command |
+| NFR-03 | Functional suitability | With insufficient context, the response says so explicitly | 100% of "no context" golden cases | Evals command |
+| NFR-04 | Performance efficiency | Brief generation p95 | Set after week 2 measurement (projection: ~45 s warm) | Evals command (p50/p95) |
+| NFR-05 | Performance efficiency | Brief generation never blocks the HTTP request | API returns a job id in < 300 ms; client polls | Manual check |
+| NFR-06 | Performance efficiency | Unchanged content is never re-embedded | 0 embedding calls when re-ingesting an unchanged activity | Model call log |
+| NFR-07 | Performance efficiency | Identical retrieved chunk set reuses the cached brief | 0 model calls on cache hit | Model call log |
+| NFR-08 | Reliability | Model calls have a timeout and bounded retries; a failed job ends in a visible failed state, never hangs or disappears | 100% of jobs end in `completed` or `failed` | Manual check with Ollama stopped |
+| NFR-09 | Security | Activity text is treated as data, never as instructions (prompt injection) | 0 injected instructions followed in the golden set's injection cases | Evals command |
+| NFR-10 | Security | No data leaves the machine | No external API calls | Architecture |
+| NFR-11 | Maintainability | Every model call is logged with model, latency, chunk ids and validation result | 100% of calls | Model call log |
+| NFR-12 | Maintainability | Switching the LLM provider requires no changes to application services | New adapter + one binding change in the service provider | Code review (HTTP to SDK switch, week 4) |
+| NFR-13 | Flexibility | A fresh clone runs with `docker compose up` plus the documented model pulls | Documented in README | Manual check |
+
+## Out of scope
+
+- **Scalability and concurrency:** single-user local tool. Ollama processes one request per model at a time by default, so multi-user load is not a goal.
+- **Availability:** no uptime target; the system runs on a personal laptop.
+- **Accessibility and UI performance:** not measured in this phase.
