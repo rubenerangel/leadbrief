@@ -8,9 +8,9 @@ function Post($path, $body) {
 }
 function Sec($ns) { [math]::Round($ns / 1e9, 2) }
 
-# Unload models so the first run is truly cold
-ollama stop $gen 2>$null | Out-Null
-ollama stop $emb 2>$null | Out-Null
+# Unload models via the API so the first run is truly cold (keep_alive 0 = unload now)
+Post "/api/generate" @{ model = $gen; keep_alive = 0 } | Out-Null
+Post "/api/embed" @{ model = $emb; input = "unload"; keep_alive = "0" } | Out-Null
 
 Write-Host "`n== Generation ($gen) =="
 1..6 | ForEach-Object {
@@ -23,10 +23,14 @@ Write-Host "`n== Generation ($gen) =="
     $r = Post "/api/generate" $body
     $kind = if ($_ -eq 1) { "cold" } else { "warm" }
     [pscustomobject]@{
-        run = $_; kind = $kind
-        total_s = Sec $r.total_duration; load_s = Sec $r.load_duration
-        in_tok = $r.prompt_eval_count; out_tok = $r.eval_count
-        tok_per_s = [math]::Round($r.eval_count / ($r.eval_duration / 1e9), 1)
+        run              = $_
+        kind             = $kind
+        total_s          = Sec $r.total_duration
+        load_s           = Sec $r.load_duration
+        in_tok           = $r.prompt_eval_count
+        out_tok          = $r.eval_count
+        prompt_tok_per_s = [math]::Round($r.prompt_eval_count / ($r.prompt_eval_duration / 1e9), 1)
+        tok_per_s        = [math]::Round($r.eval_count / ($r.eval_duration / 1e9), 1)
     }
 } | Format-Table -AutoSize
 
