@@ -1,14 +1,15 @@
 # Secrets
 .env
 .env.*
-!env.example
+# CHANGE: re-include the templates; without this line .env.* also ignores .env.example
+!.env.example
 
-# Dependecies
+# Dependencies
 node_modules/
 vendor/
 
 # IDE / OS
-.idea
+.idea/
 .vscode/
 .DS_Store
 Thumbs.db
