@@ -10,6 +10,21 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class AccountFactory extends Factory
 {
+    private const INDUSTRIES = [
+        'Software',
+        'Manufacturing',
+        'Healthcare',
+        'Logistics',
+        'Retail',
+        'Financial Services',
+        'Education',
+        'Real Estate',
+        'Telecommunications',
+        'Energy',
+        'Construction',
+        'Hospitality',
+    ];
+
     /**
      * Define the model's default state.
      *
@@ -18,7 +33,9 @@ class AccountFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->company(),
+            'domain' => fake()->unique()->domainName(),
+            'industry' => fake()->randomElement(self::INDUSTRIES),
         ];
     }
 }
